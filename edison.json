@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 2,
+  "id": "personal.edison",
+  "name": "Edison",
+  "version": "1.0.0",
+  "formats": ["er", "eu"],
+  "rules": [
+    {
+      "id": "destiny-hero-malicious",
+      "card": { "name": "Destiny HERO - Malicious" },
+      "label": "Banish this copy; summon another from Deck",
+      "requires": { "sourceZone": "graveyard", "ownTurn": true, "phases": ["M1", "M2"] },
+      "activation": [{ "op": "banish", "card": "source" }],
+      "resolution": [
+        {
+          "op": "special-summon",
+          "from": "deck",
+          "card": { "name": "Destiny HERO - Malicious" },
+          "positions": ["ATK", "DEF"]
+        }
+      ]
+    }
+  ]
+}
