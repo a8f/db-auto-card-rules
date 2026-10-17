@@ -11,6 +11,13 @@ unrated Edison by default. Its first effect is Destiny HERO - Malicious:
 banish the graveyard copy as cost, then Special Summon another copy from Deck
 in the chosen Attack or Defense Position when the effect resolves.
 
+The historical mapping also prevents activation while Necrovalley is face-up.
+If all monster zones become occupied before resolution, it destroys a matching
+Deck copy and sends it to the Graveyard. This uses the extension's optional
+`absentFaceUpCards` prerequisite and `onNoMonsterZone` resolution policy; reload
+the updated extension before importing/watching this definition. Priority,
+negation, continuous-effect negation and replacement effects remain manual.
+
 In extension settings, open **Automation → Card rules lists → Share or import
 a rules list**, choose `edison.json` with **Load JSON file**, review the preview,
 select **Install disabled**, then enable the list. For Solo tests, add Solo Mode
@@ -34,7 +41,27 @@ To additionally validate against a local extension checkout, set
 `DBX_EXTENSION_DIR` to that checkout's absolute path before running the checks.
 That integration check is optional; this repository needs no npm dependencies.
 
-The JSON uses schema 2: card selectors, prerequisites, activation operations and
+The JSON uses schema 3: printed card passcode/name selectors, prerequisites, activation operations and
 resolution operations. No card-specific executable script is installed in the
 extension. New effects using the existing action vocabulary can be added here;
 new action types require a generic adapter in the extension.
+
+## Extractor review data
+
+`edison.reviews.json` contains reviewed historical card facts, corrections,
+provenance and comparison notes for the separate simulator extractor. All actual
+card mappings belong here, alongside `edison.json`; the extractor repository
+contains only generic code, format/source metadata and synthetic tests.
+
+From the extension checkout, `--write personal-rules/edison.json` automatically
+loads `personal-rules/edison.reviews.json`. For preview, pass it explicitly:
+
+```sh
+node card-rule-extractor/extract-card-rules.mjs 09411399 --ruleset edison --reviews personal-rules/edison.reviews.json
+```
+
+The review document is extractor input, not an extension rules list. Do not
+import it into the extension. Raw third-party ruling JSON/HTML is downloaded
+automatically by the extractor into its ignored local cache; it is not included
+in either repository. Cached rulings are retained until explicitly refreshed
+or cleared.

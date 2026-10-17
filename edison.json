@@ -1,22 +1,53 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "personal.edison",
   "name": "Edison",
   "version": "1.0.0",
-  "formats": ["er", "eu"],
+  "formats": [
+    "er",
+    "eu"
+  ],
   "rules": [
     {
       "id": "destiny-hero-malicious",
-      "card": { "name": "Destiny HERO - Malicious" },
+      "card": {
+        "passcode": "09411399",
+        "name": "Destiny HERO - Malicious"
+      },
       "label": "Banish this copy; summon another from Deck",
-      "requires": { "sourceZone": "graveyard", "ownTurn": true, "phases": ["M1", "M2"] },
-      "activation": [{ "op": "banish", "card": "source" }],
+      "requires": {
+        "sourceZone": "graveyard",
+        "ownTurn": true,
+        "phases": [
+          "M1",
+          "M2"
+        ],
+        "absentFaceUpCards": [
+          {
+            "passcode": "47355498",
+            "name": "Necrovalley"
+          }
+        ]
+      },
+      "activation": [
+        {
+          "op": "banish",
+          "card": "source"
+        }
+      ],
       "resolution": [
         {
           "op": "special-summon",
           "from": "deck",
-          "card": { "name": "Destiny HERO - Malicious" },
-          "positions": ["ATK", "DEF"]
+          "card": {
+            "passcode": "09411399",
+            "name": "Destiny HERO - Malicious"
+          },
+          "positions": [
+            "ATK",
+            "DEF"
+          ],
+          "onNoMonsterZone": "destroy-to-graveyard"
         }
       ]
     }
