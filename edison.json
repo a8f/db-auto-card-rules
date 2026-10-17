@@ -5,7 +5,8 @@
   "version": "1.0.0",
   "formats": [
     "er",
-    "eu"
+    "eu",
+    "so"
   ],
   "rules": [
     {
@@ -48,6 +49,44 @@
             "DEF"
           ],
           "onNoMonsterZone": "destroy-to-graveyard"
+        }
+      ]
+    },
+    {
+      "id": "ygopro-40044918",
+      "card": {
+        "passcode": "40044918",
+        "name": "Elemental HERO Stratos"
+      },
+      "label": "On summon: search a monster or destroy Spells/Traps",
+      "requires": {
+        "sourceZone": "monster",
+        "ownTurn": false,
+        "phases": [
+          "DP",
+          "SP",
+          "M1",
+          "BP",
+          "M2",
+          "EP"
+        ],
+        "trigger": "normal-or-special-summon"
+      },
+      "activation": [],
+      "resolution": [
+        {
+          "op": "choose-search-or-destroy",
+          "monsterNamePrefixes": [
+            "Elemental HERO ",
+            "Destiny HERO ",
+            "Evil HERO "
+          ],
+          "searchAbsentFaceUpCards": [
+            {
+              "passcode": "71564252",
+              "name": "Thunder King Rai-Oh"
+            }
+          ]
         }
       ]
     }

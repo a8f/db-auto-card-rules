@@ -2,6 +2,27 @@
   "schemaVersion": 1,
   "ruleset": "edison",
   "cards": {
+    "40044918": {
+      "name": "Elemental HERO Stratos",
+      "status": "approved",
+      "reviewedOn": "2026-10-17",
+      "sources": ["https://www.edisonformat.com/rulings/individual-rulings-d-e"],
+      "effect": {
+        "kind": "summon-trigger-search-or-destroy",
+        "monsterNamePrefixes": ["Elemental HERO ", "Destiny HERO ", "Evil HERO "],
+        "searchAbsentFaceUpCards": [{ "passcode": "71564252", "name": "Thunder King Rai-Oh" }]
+      },
+      "manualResponsibilities": [
+        "Confirm a legal optional Normal/Special Summon trigger window. This effect can miss timing and can activate during the Damage Step; the extension does not adjudicate chains, summon negation, effect negation or changed card names.",
+        "Declare search or destruction at activation. Destruction does not target: choose Spells/Traps and count other face-up Elemental, Destiny and Evil HERO monsters only at resolution. Hero Kid is excluded.",
+        "Duelingbook permits controllers to move their own field cards. The extension displays selected destruction cards in its panel and moves yours; the opponent must move theirs. It sends no duel chat messages. Apply destruction protection, replacement effects and simultaneous destruction consequences manually. Cancel automation if native To GY movement is inappropriate.",
+        "The search requires a legal matching monster in Deck; confirm this without opening the Deck before activating. Continuous search prohibitions are checked face-up; adjudicate negated continuous effects and other restrictions manually."
+      ],
+      "comparisonSources": [{
+        "url": "https://edisonformat.net/card?name=Elemental%20HERO%20Stratos",
+        "note": "The April 2010 historical mapping uses Elemental, Destiny and Evil HERO names, not an unrestricted modern HERO family. Destruction choices occur at resolution and may be empty."
+      }]
+    },
     "09411399": {
       "name": "Destiny HERO - Malicious",
       "status": "approved",
