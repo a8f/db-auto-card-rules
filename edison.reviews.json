@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ruleset": "edison",
+  "cards": {
+    "09411399": {
+      "name": "Destiny HERO - Malicious",
+      "status": "approved",
+      "reviewedOn": "2026-10-17",
+      "sources": [
+        "https://www.edisonformat.com/rulings/individual-rulings-d-e",
+        "https://www.edisonformat.com/priority.html"
+      ],
+      "effect": {
+        "kind": "graveyard-ignition-banish-summon-from-deck",
+        "summon": {
+          "passcode": "09411399",
+          "name": "Destiny HERO - Malicious"
+        },
+        "positions": [
+          "ATK",
+          "DEF"
+        ]
+      },
+      "corrections": [
+        {
+          "kind": "activation-prohibition",
+          "card": {
+            "passcode": "47355498",
+            "name": "Necrovalley"
+          },
+          "summary": "Prevent activation while a face-up Necrovalley is on either field."
+        },
+        {
+          "kind": "no-monster-zone-destroy-deck-copy",
+          "summary": "If all monster zones become occupied before resolution, destroy a matching Deck copy and send it to the Graveyard instead of summoning."
+        }
+      ],
+      "manualResponsibilities": [
+        "Choose a legal ignition-priority window; chains, negation, replacement effects and whether continuous effects are negated are adjudicated manually.",
+        "Duelingbook represents destruction with native To GY movement. Apply any consequences of destruction manually."
+      ],
+      "comparisonSources": [
+        {
+          "url": "https://edisonformat.net/card?name=Destiny%20HERO%20-%20Malicious",
+          "dataUrl": "https://raw.githubusercontent.com/MikaMikaDE/mikaRulings/main/cards/9411399.json",
+          "note": "The currently displayed Edison-specific ruling discusses ignition priority. It does not list the older Necrovalley and full-zone cases; absence alone is not evidence to remove historical behavior."
+        }
+      ]
+    }
+  }
+}
