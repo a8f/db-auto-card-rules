@@ -4,7 +4,7 @@ import { mkdtemp, readFile, writeFile, rm, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { tmpdir } from "node:os";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import { addEdisonCards, promptForCandidate } from "../add-edison-cards.mjs";
 
@@ -12,7 +12,7 @@ async function fixture(t) {
   const root = await mkdtemp(path.join(tmpdir(), "edison-batch-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const options = { headless: false, listFile: path.join(root, "edison.json"), reviewsFile: path.join(root, "edison.reviews.json"), reportFile: path.join(root, "reports", "import.json") };
-  const list = { schemaVersion: 3, id: "test.edison", name: "Example Edison", version: "1.0.0", formats: ["er", "eu"], rules: [
+  const list = { schemaVersion: 4, id: "test.edison", name: "Example Edison", version: "1.0.0", formats: ["er", "eu"], rules: [
     { id: "original-id", card: { passcode: "09000001", name: "Example Existing" }, label: "Old" }
   ] };
   await writeFile(options.listFile, JSON.stringify(list));
@@ -117,6 +117,7 @@ test("numbered prompt retries invalid input, accepts a number, and supports skip
 
 const extractor = process.env.DBE_SIM_EXTRACTOR_DIR || fileURLToPath(new URL("../../card-rule-extractor/", import.meta.url));
 test("real extractor integration reconstructs a supported card while skipping a failed name", { skip: !existsSync(path.join(extractor, "extract-card-rules.mjs")) }, async t => {
+  const { default: core } = await import(pathToFileURL(path.join(extractor, "schema-4.mjs")));
   const { root, options } = await fixture(t);
   const { DatabaseSync } = await import("node:sqlite");
   const sim = path.join(root, "YGOPRO"); await mkdir(sim);
@@ -127,18 +128,16 @@ test("real extractor integration reconstructs a supported card while skipping a 
   const review = { status: "approved", name: "Example Existing", reviewedOn: "2026-10-17", sources: ["https://example.test/rulings"],
     effect: { kind: "graveyard-ignition-banish-summon-from-deck", summon: { passcode: "09000001", name: "Example Existing" }, positions: ["ATK", "DEF"] } };
   await writeFile(options.reviewsFile, JSON.stringify({ schemaVersion: 1, ruleset: "edison", cards: { "09000001": review } }));
-  const realList = { schemaVersion: 3, id: "test.edison", name: "Example Edison", version: "1.0.0", formats: ["er", "eu"], rules: [{
+  const realList = { schemaVersion: 4, id: "test.edison", name: "Example Edison", version: "1.0.0", formats: ["er", "eu"], rules: [{
     id: "original-id", card: { passcode: "09000001", name: "Example Existing" }, label: "Old",
-    requires: { sourceZone: "graveyard", ownTurn: true, phases: ["M1"] }, activation: [{ op: "banish", card: "source" }],
-    resolution: [{ op: "special-summon", from: "deck", card: { passcode: "09000001", name: "Example Existing" }, positions: ["DEF"] }]
-  }] };
+    action: core.banishSummonAction({ phases: ["M1"], card: { passcode: "09000001", name: "Example Existing" }, positions: ["DEF"] }) }] };
   await writeFile(options.listFile, JSON.stringify(realList));
   const { api: _mock, ...paths } = options;
   const report = await addEdisonCards(["Missing Example", "example existing"], { ...paths, extractor, simulator: sim, extractionOptions: { research: false } });
   assert.deepEqual(report.results.map(item => item.status), ["failed", "updated"]);
   const saved = JSON.parse(await readFile(options.listFile, "utf8"));
   assert.equal(saved.rules[0].id, "original-id");
-  assert.deepEqual(saved.rules[0].resolution[0].positions, ["ATK", "DEF"]);
+  assert.deepEqual(saved.rules[0].action.activation.choices[0].options, ["ATK", "DEF"]);
 });
 
 test("CLI help and malformed name files work without the extractor", async t => {

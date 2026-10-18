@@ -27,7 +27,7 @@ async function loadExtractor(directory) {
     catch { continue; }
     const [extractor, { default: core }] = await Promise.all([
       import(pathToFileURL(path.join(candidate, "extract-card-rules.mjs"))),
-      import(pathToFileURL(path.join(candidate, "schema-3.mjs")))
+      import(pathToFileURL(path.join(candidate, "schema-4.mjs")))
     ]);
     return { ...extractor, validate: core.importAutomationList };
   }

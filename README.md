@@ -4,6 +4,17 @@ Independent, optional card rules for Dueling Book Enhancer. The extension can
 be cloned, tested and used without this repository. Lists are data only and
 are not bundled into the extension.
 
+Lists use schema 4 with action schema 2. Older extension versions cannot load
+them; reload the updated extension and reimport or restart the local watcher.
+Each entry keeps `id`, `card`, and `label` metadata outside its nested `action`.
+Review sidecars and helper reports retain their separate formats.
+
+The Edison list is version 3.0.0. Its actions use explicit source/timing,
+activation choices/costs, resolution search/destruction branches, and required
+manual coverage. Effect entry IDs remain stable; changing an ID tells the
+extension it is a different effect. Several effect IDs on one card now open an
+effect chooser before declaration; duplicate enabled IDs are blocked.
+
 ## Edison
 
 `edison.json` contains the personal Edison rules list. It supports ranked and
@@ -40,11 +51,11 @@ node --test checks/edison.check.cjs
 ```
 
 To additionally validate against a local extension checkout, set
-`DBX_EXTENSION_DIR` to that checkout's absolute path before running the checks.
+`DBX_EXTENSION_DIR` to that checkout's `extension/shared` absolute path before running the checks.
 That integration check is optional; this repository needs no npm dependencies.
 
-The JSON uses schema 3: printed card passcode/name selectors, prerequisites, activation operations and
-resolution operations. No card-specific executable script is installed in the
+The JSON uses list schema 4: card identity/label metadata and a nested `action`
+following action schema 2 (prerequisites, activation and resolution operations). No card-specific executable script is installed in the
 extension. New effects using the existing action vocabulary can be added here;
 new action types require a generic adapter in the extension.
 

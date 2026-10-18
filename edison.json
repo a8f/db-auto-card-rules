@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "id": "personal.edison",
   "name": "Edison",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "formats": [
     "er",
     "eu",
@@ -16,41 +16,83 @@
         "name": "Destiny HERO - Malicious"
       },
       "label": "Banish this copy; summon another from Deck",
-      "requires": {
-        "sourceZone": "graveyard",
-        "ownTurn": true,
-        "phases": [
-          "M1",
-          "M2"
-        ],
-        "absentFaceUpCards": [
-          {
-            "passcode": "47355498",
-            "name": "Necrovalley"
-          }
-        ]
-      },
-      "activation": [
-        {
-          "op": "banish",
-          "card": "source"
-        }
-      ],
-      "resolution": [
-        {
-          "op": "special-summon",
-          "from": "deck",
-          "card": {
-            "passcode": "09411399",
-            "name": "Destiny HERO - Malicious"
-          },
-          "positions": [
-            "ATK",
-            "DEF"
+      "action": {
+        "schemaVersion": 2,
+        "source": {
+          "zone": "graveyard",
+          "player": "self"
+        },
+        "timing": {
+          "kind": "ignition",
+          "turn": "self",
+          "phases": [
+            "M1",
+            "M2"
           ],
-          "onNoMonsterZone": "destroy-to-graveyard"
+          "verification": "manual"
+        },
+        "filters": {},
+        "activation": {
+          "checks": [
+            {
+              "check": "absent-face-up",
+              "cards": [
+                {
+                  "passcode": "47355498",
+                  "name": "Necrovalley"
+                }
+              ]
+            }
+          ],
+          "choices": [
+            {
+              "id": "position",
+              "kind": "position",
+              "options": [
+                "ATK",
+                "DEF"
+              ]
+            }
+          ],
+          "costs": [
+            {
+              "op": "banish",
+              "card": "source",
+              "reason": "cost"
+            }
+          ],
+          "targets": []
+        },
+        "resolution": [
+          {
+            "op": "special-summon",
+            "from": "deck",
+            "card": {
+              "passcode": "09411399",
+              "name": "Destiny HERO - Malicious"
+            },
+            "position": {
+              "choice": "position"
+            },
+            "reason": "effect",
+            "onNoMonsterZone": {
+              "op": "destroy",
+              "reason": "effect"
+            }
+          }
+        ],
+        "coverage": {
+          "level": "assisted",
+          "manual": [
+            "activation-legality",
+            "responses-and-chains",
+            "negation",
+            "replacement-and-protection",
+            "movement-consequences",
+            "special-summon-legality"
+          ]
         }
-      ]
+      }
     },
     {
       "id": "ygopro-40044918",
@@ -59,36 +101,124 @@
         "name": "Elemental HERO Stratos"
       },
       "label": "On summon: search a monster or destroy Spells/Traps",
-      "requires": {
-        "sourceZone": "monster",
-        "ownTurn": false,
-        "phases": [
-          "DP",
-          "SP",
-          "M1",
-          "BP",
-          "M2",
-          "EP"
-        ],
-        "trigger": "normal-or-special-summon"
-      },
-      "activation": [],
-      "resolution": [
-        {
-          "op": "choose-search-or-destroy",
-          "monsterNamePrefixes": [
-            "Elemental HERO ",
-            "Destiny HERO ",
-            "Evil HERO "
+      "action": {
+        "schemaVersion": 2,
+        "source": {
+          "zone": "monster",
+          "player": "self"
+        },
+        "timing": {
+          "kind": "optional-trigger",
+          "turn": "either",
+          "phases": [
+            "DP",
+            "SP",
+            "M1",
+            "BP",
+            "M2",
+            "EP"
           ],
-          "searchAbsentFaceUpCards": [
+          "verification": "manual",
+          "events": [
+            "normal-summon",
+            "special-summon"
+          ],
+          "damageStep": true
+        },
+        "filters": {
+          "monsters": {
+            "cardType": "monster",
+            "namePrefixes": [
+              "Elemental HERO ",
+              "Destiny HERO ",
+              "Evil HERO "
+            ]
+          }
+        },
+        "activation": {
+          "checks": [],
+          "choices": [
             {
-              "passcode": "71564252",
-              "name": "Thunder King Rai-Oh"
+              "id": "mode",
+              "kind": "option",
+              "options": [
+                "search",
+                "destroy"
+              ]
             }
+          ],
+          "costs": [],
+          "targets": []
+        },
+        "resolution": [
+          {
+            "op": "branch",
+            "choice": "mode",
+            "cases": {
+              "search": [
+                {
+                  "op": "search",
+                  "from": "deck",
+                  "to": "hand",
+                  "filter": "monsters",
+                  "count": 1,
+                  "reveal": true,
+                  "shuffle": true,
+                  "checks": [
+                    {
+                      "check": "absent-face-up",
+                      "cards": [
+                        {
+                          "passcode": "71564252",
+                          "name": "Thunder King Rai-Oh"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "destroy": [
+                {
+                  "op": "destroy",
+                  "reason": "effect",
+                  "selection": {
+                    "at": "resolution",
+                    "from": "field",
+                    "players": "both",
+                    "cardTypes": [
+                      "spell",
+                      "trap"
+                    ],
+                    "minimum": 0,
+                    "maximum": {
+                      "count": {
+                        "zone": "monster",
+                        "player": "self",
+                        "faceUp": true,
+                        "exclude": "source",
+                        "filter": "monsters"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "coverage": {
+          "level": "assisted",
+          "manual": [
+            "activation-legality",
+            "responses-and-chains",
+            "negation",
+            "replacement-and-protection",
+            "movement-consequences",
+            "trigger-window",
+            "dynamic-card-properties",
+            "opponent-movement"
           ]
         }
-      ]
+      }
     }
   ]
 }
