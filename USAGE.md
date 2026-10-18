@@ -1,3 +1,29 @@
+# Dark Grepher
+
+Only the once-per-turn field ignition effect is supported. Play its hand Special
+Summon procedure manually. Reload the updated extension, refresh Duelingbook and
+import or watch the updated `edison.json`.
+
+1. During your Main Phase, confirm this copy has not used its effect and a legal
+   DARK monster remains in your Deck. Open its face-up card menu and choose
+   **Wait for opponent** or **Resolve now**.
+2. Choose a DARK monster from your hand and confirm the discard cost. The
+   extension declares and sends the cost to the Graveyard.
+3. Handle responses and negation. In wait mode, a fresh opponent thumbs-up
+   permits resolution; **Resolve now** also releases it manually.
+4. In the same filtered native Deck picker used for searches, choose a DARK
+   monster at resolution. Clicking the card sends it to the Graveyard immediately unless
+   **Confirm card selections** is enabled, in which case confirm the selection.
+   The native Deck view closes and shuffles after the movement is confirmed.
+
+Cancellation does not refund a discard. The runtime blocks repeat uses it has
+observed this turn, but earlier manual uses, reloads and unobserved resets require
+manual checking. Chains, changed attributes/types, discard restrictions and
+whether continuous effects are negated remain manual. A face-up Macro Cosmos,
+Dimensional Fissure, or Banisher effect prompts for the applicable movement;
+choose the Graveyard or Banished zone after adjudicating whether it applies.
+Other replacement effects remain manual.
+
 # Destiny HERO - Malicious
 
 Import and enable `edison.json` in extension settings first. Ranked Edison,

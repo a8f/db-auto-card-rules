@@ -4,12 +4,17 @@ Independent, optional card rules for Dueling Book Enhancer. The extension can
 be cloned, tested and used without this repository. Lists are data only and
 are not bundled into the extension.
 
-Lists use schema 4 with action schema 2. Older extension versions cannot load
+Lists use schema 4 with composable action schema 3. Older extension versions cannot load
 them; reload the updated extension and reimport or restart the local watcher.
 Each entry keeps `id`, `card`, and `label` metadata outside its nested `action`.
 Review sidecars and helper reports retain their separate formats.
 
-The Edison list is version 3.0.0. Its actions use explicit source/timing,
+The import command reports per-effect coverage and warns about unsupported
+effects on every run, including unchanged imports. It can import the supported
+effect while leaving others manual. Missing or changed review inventories
+report coverage as unverified; see the generated diagnostics for details.
+
+The Edison list is version 4.0.0. Its actions use explicit source/timing,
 activation choices/costs, resolution search/destruction branches, and required
 manual coverage. Effect entry IDs remain stable; changing an ID tells the
 extension it is a different effect. Several effect IDs on one card now open an
@@ -55,7 +60,7 @@ To additionally validate against a local extension checkout, set
 That integration check is optional; this repository needs no npm dependencies.
 
 The JSON uses list schema 4: card identity/label metadata and a nested `action`
-following action schema 2 (prerequisites, activation and resolution operations). No card-specific executable script is installed in the
+following action schema 3 (prerequisites, activation and resolution operations). No card-specific executable script is installed in the
 extension. New effects using the existing action vocabulary can be added here;
 new action types require a generic adapter in the extension.
 
@@ -95,7 +100,14 @@ earlier writes remain. Existing rule IDs and list settings are preserved.
 proposed merges without changing the list. Names resolving to the same passcode
 are processed once after their first success.
 
-Progress prints to the terminal, and `reports/last-edison-import.json` records
+The terminal prints a short result for each card. Full diagnostics are saved to
+`reports/last-edison-import.json.txt` (or the `--report` path with `.txt` appended),
+including card text, Lua loading and translation status, and the Edison review
+result. Failed cards also include downloaded ruling text and the loaded Lua
+source. Use this report when investigating unsupported cards or adding effect
+support. Each run replaces the reports.
+
+`reports/last-edison-import.json` records
 per-card outcomes, source diagnostics, warnings and candidate matches. This
 directory is Git-ignored; `--report <path>` selects another output. Exit status 0
 means no card failed; 1 means some cards failed while successful cards were saved;

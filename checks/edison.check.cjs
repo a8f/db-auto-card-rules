@@ -4,6 +4,26 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const list = require("../edison.json");
 
+test("Dark Grepher exports only the reviewed field ignition with a DARK discard cost", () => {
+  const reviews = require("../edison.reviews.json");
+  const rules = list.rules.filter(rule => rule.card.passcode === "14536035");
+  assert.equal(rules.length, 1);
+  const action = rules[0].action;
+  assert.equal(rules[0].card.name, "Dark Grepher");
+  assert.equal(action.source.zone, "monster");
+  assert.equal(action.timing.kind, "ignition");
+  assert.equal(action.timing.oncePerTurn, "source");
+  assert.deepEqual(action.filters.monsters, { cardType: "monster", attribute: "DARK" });
+  assert.deepEqual(action.activation.costs, [{ op: "discard", from: "hand", filter: "monsters", count: 1, reason: "cost" }]);
+  assert.deepEqual(action.activation.targets, []);
+  assert.deepEqual(action.resolution, [{ op: "send-to-graveyard", from: "deck", filter: "monsters", count: 1, shuffle: true, reason: "effect" }]);
+  assert.ok(reviews.cards["14536035"].manualResponsibilities.some(text => /Special Summon procedure.*unsupported/.test(text)));
+  const inventory = reviews.cards["14536035"].effectInventory;
+  assert.equal(inventory.effects.length, 2);
+  assert.equal(inventory.effects.filter(effect => effect.status === "implemented").length, 1);
+  assert.equal(inventory.effects.find(effect => effect.id === "hand-special-summon").status, "unsupported");
+});
+
 test("Edison scope and Malicious activation/resolution definition", () => {
   assert.equal(list.schemaVersion, 4);
   assert.deepEqual(list.formats, ["er", "eu", "so"]);

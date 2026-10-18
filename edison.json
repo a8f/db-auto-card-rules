@@ -2,7 +2,7 @@
   "schemaVersion": 4,
   "id": "personal.edison",
   "name": "Edison",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "formats": [
     "er",
     "eu",
@@ -17,7 +17,7 @@
       },
       "label": "Banish this copy; summon another from Deck",
       "action": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "source": {
           "zone": "graveyard",
           "player": "self"
@@ -102,7 +102,7 @@
       },
       "label": "On summon: search a monster or destroy Spells/Traps",
       "action": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "source": {
           "zone": "monster",
           "player": "self"
@@ -216,6 +216,73 @@
             "trigger-window",
             "dynamic-card-properties",
             "opponent-movement"
+          ]
+        }
+      }
+    },
+    {
+      "id": "ygopro-14536035",
+      "card": {
+        "passcode": "14536035",
+        "name": "Dark Grepher"
+      },
+      "label": "Discard 1 DARK monster; send 1 from Deck to Graveyard",
+      "action": {
+        "schemaVersion": 3,
+        "source": {
+          "zone": "monster",
+          "player": "self"
+        },
+        "timing": {
+          "kind": "ignition",
+          "turn": "self",
+          "phases": [
+            "M1",
+            "M2"
+          ],
+          "verification": "manual",
+          "oncePerTurn": "source"
+        },
+        "filters": {
+          "monsters": {
+            "cardType": "monster",
+            "attribute": "DARK"
+          }
+        },
+        "activation": {
+          "checks": [],
+          "choices": [],
+          "costs": [
+            {
+              "op": "discard",
+              "from": "hand",
+              "filter": "monsters",
+              "count": 1,
+              "reason": "cost"
+            }
+          ],
+          "targets": []
+        },
+        "resolution": [
+          {
+            "op": "send-to-graveyard",
+            "from": "deck",
+            "filter": "monsters",
+            "count": 1,
+            "shuffle": true,
+            "reason": "effect"
+          }
+        ],
+        "coverage": {
+          "level": "assisted",
+          "manual": [
+            "activation-legality",
+            "responses-and-chains",
+            "negation",
+            "replacement-and-protection",
+            "movement-consequences",
+            "dynamic-card-properties",
+            "once-per-turn"
           ]
         }
       }

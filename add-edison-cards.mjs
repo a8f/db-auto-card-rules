@@ -5,6 +5,48 @@ import { createInterface } from "node:readline/promises";
 
 const repository = path.dirname(fileURLToPath(import.meta.url));
 
+function coverageLines(coverage) {
+  if (!coverage) return [];
+  return ["Effect coverage: " + coverage.status + (Number.isInteger(coverage.total) ? " (" + coverage.implemented + "/" + coverage.total + " implemented)" : ""),
+    ...(coverage.effects || []).map(effect => "  " + effect.status.toUpperCase() + ": " + effect.label)];
+}
+
+export function formatCardResult(item) {
+  return [item.status.toUpperCase() + ": " + (item.name || item.input) + (item.reason ? " - " + item.reason : ""),
+    ...coverageLines(item.effectCoverage), ...(item.warnings || []).map(warning => "WARNING: " + warning)].join("\n");
+}
+
+export function formatCardDiagnostics(item) {
+  const card = item.extraction || {};
+  const lines = ["--- Edison card diagnostic ---",
+    "Input: " + item.input,
+    "Card: " + (card.name || item.name || "unresolved") + (card.passcode ? " [" + card.passcode + "]" : ""),
+    "Import: " + item.status + (item.reason ? " - " + item.reason : "")];
+  if (item.selection) lines.push("Match: " + item.selection.mode + " (" + item.selection.candidateCount + " candidates)");
+  for (const candidate of card.candidates || []) lines.push("Candidate: " + candidate.name + " [" + candidate.passcode + "]");
+  lines.push("Card text: " + (typeof card.text === "string" ? card.text || "(empty)" : "not loaded"));
+  lines.push("Lua script: " + (typeof card.lua === "string" ? "loaded" : "not loaded") + (card.scriptPath ? " - " + card.scriptPath : ""));
+  const translated = Boolean(card.simulatorRule || (card.rule && card.adaptation?.mode !== "rulings-reconstruction"));
+  lines.push("Lua translation: " + (card.simulatorReason ? "failed - " + card.simulatorReason : translated ? "supported" : "not confirmed"));
+  if (card.simulatorAnalysis?.adapter) lines.push("Lua adapter: " + card.simulatorAnalysis.adapter);
+  if (card.adaptation) lines.push("Historical adaptation: " + card.adaptation.mode);
+  lines.push("Edison review: " + (card.ruleset?.writeAllowed === true ? "passed" : card.ruleset?.writeAllowed === false ? "blocked - " + card.ruleset.reason : "not confirmed"));
+  lines.push(...coverageLines(item.effectCoverage || card.effectCoverage));
+  for (const warning of item.warnings || []) lines.push("Warning: " + warning);
+  if (item.status === "failed") {
+    for (const source of card.research || []) {
+      lines.push("Ruling source (" + (source.policy || "unspecified") + "): " + (source.url || source.dataUrl || "unknown"));
+      if (source.dataUrl && source.dataUrl !== source.url) lines.push("Ruling data: " + source.dataUrl);
+      if (source.text) lines.push("Ruling text: " + source.text);
+      if (source.psct) lines.push("Source PSCT: " + source.psct);
+      if (source.suggestions?.length) lines.push("Research suggestions (unapproved): " + JSON.stringify(source.suggestions));
+    }
+    if (typeof card.lua === "string") lines.push("Lua source:", "```lua", card.lua.trimEnd(), "```");
+  }
+  lines.push("--- End Edison card diagnostic ---");
+  return lines.join("\n");
+}
+
 export async function promptForCandidate(input, candidates, { ask, log = console.log }) {
   log('Multiple matches for "' + input + '":');
   candidates.forEach((card, index) => log("  " + (index + 1) + ". " + card.name + " [" + card.passcode + "]"));
@@ -38,6 +80,7 @@ export async function addEdisonCards(names, options = {}) {
   const listFile = options.listFile || path.join(repository, "edison.json");
   const reviewsFile = options.reviewsFile || path.join(repository, "edison.reviews.json");
   const reportFile = options.reportFile || path.join(repository, "reports", "last-edison-import.json");
+  const diagnosticsFile = reportFile + ".txt";
   const api = options.api || await loadExtractor(options.extractor || process.env.DBE_SIM_EXTRACTOR_DIR);
   const original = await readFile(listFile, "utf8");
   api.validate(original);
@@ -71,7 +114,9 @@ export async function addEdisonCards(names, options = {}) {
       item.extraction = card;
       item.name = card.name;
       item.passcode = card.passcode;
-      item.warnings = (card.research || []).flatMap(source => [source.error, source.warning, source.cacheWarning].filter(Boolean));
+      item.effectCoverage = card.effectCoverage || { status: "unverified", effects: [],
+        warnings: ["Full-card effect coverage is unverified: the extractor did not provide an effect inventory assessment. Update the extractor and review all effects."] };
+      item.warnings = [...(item.effectCoverage.warnings || []), ...(card.research || []).flatMap(source => [source.error, source.warning, source.cacheWarning].filter(Boolean))];
       if (card.status !== "supported") throw new Error(card.reason || "This card's complete effect could not be extracted.");
       if (seen.has(card.passcode)) {
         item.status = "duplicate";
@@ -93,10 +138,13 @@ export async function addEdisonCards(names, options = {}) {
   }
   report.completedAt = new Date().toISOString();
   report.failed = report.results.filter(item => item.status === "failed").length;
+  report.warningCount = report.results.reduce((count, item) => count + (item.warnings?.length || 0), 0);
   report.summary = Object.fromEntries([...new Set(report.results.map(item => item.status))]
     .map(status => [status, report.results.filter(item => item.status === status).length]));
   await mkdir(path.dirname(reportFile), { recursive: true });
+  report.diagnosticsFile = diagnosticsFile;
   await writeFile(reportFile, JSON.stringify(report, null, 2) + "\n");
+  await writeFile(diagnosticsFile, report.results.map(formatCardDiagnostics).join("\n\n") + "\n");
   return { ...report, reportFile };
 }
 
@@ -130,12 +178,10 @@ export async function main(args) {
       terminal ||= createInterface({ input: process.stdin, output: process.stdout });
       return promptForCandidate(input, candidates, { ask: question => terminal.question(question) });
     }, onResult(item) {
-    if (item.selection) console.log("MATCH: " + item.input + " → " + item.selection.chosen.name + " [" + item.selection.chosen.passcode + "] (" + item.selection.mode + ")");
-    console.log(item.status.toUpperCase() + ": " + (item.name || item.input) + (item.reason ? " — " + item.reason : ""));
-    for (const candidate of item.extraction?.candidates || []) console.log("  " + candidate.passcode + "  " + candidate.name);
-    for (const warning of item.warnings || []) console.log("  Warning: " + warning);
+    console.log(formatCardResult(item));
   } }); } finally { terminal?.close(); }
   console.log(Object.entries(report.summary).map(([status, count]) => count + " " + status).join(", ") + ". Report: " + report.reportFile);
+  console.log("Full diagnostics saved to: " + report.diagnosticsFile);
   if (report.failed) process.exitCode = 1;
 }
 

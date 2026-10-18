@@ -2,15 +2,70 @@
   "schemaVersion": 1,
   "ruleset": "edison",
   "cards": {
+    "14536035": {
+      "name": "Dark Grepher",
+      "status": "approved",
+      "reviewedOn": "2026-10-17",
+      "sources": [
+        "https://www.edisonformat.com/rulings/individual-rulings-d-e"
+      ],
+      "effect": {
+        "kind": "field-ignition-discard-send-from-deck",
+        "attribute": "DARK"
+      },
+      "manualResponsibilities": [
+        "This review exports only the once-per-turn field ignition effect. The hand Special Summon procedure is intentionally unsupported and must be played manually.",
+        "Confirm a legal own Main Phase ignition-priority window, an unused effect for this face-up copy, a discardable DARK monster in hand and a legal DARK monster in Deck before declaring. The Deck is not opened to prove activation legality.",
+        "Discarding is a cost and is not refunded if the effect is negated or automation is canceled. Choose the Deck monster at resolution; this effect does not target.",
+        "A face-up Macro Cosmos, Dimensional Fissure, Banisher of the Light, or Banisher of the Radiance prompts for the applicable discard or Deck movement. Decide whether its public effect applies, including negation, then choose Graveyard or Banish. Other replacement effects and discard restrictions require manual adjudication.",
+        "The runtime remembers uses it observes for each source copy this turn. Confirm usage before automation loaded and adjudicate soft once-per-turn resets, chains, effect negation, changed attributes/types and movement consequences manually."
+      ],
+      "comparisonSources": [
+        {
+          "url": "https://edisonformat.net/card?name=Dark%20Grepher",
+          "dataUrl": "https://raw.githubusercontent.com/MikaMikaDE/mikaRulings/main/cards/14536035.json",
+          "note": "The revised source discusses Edison ignition priority. The exported action covers only the field ignition effect; the separate non-chain Special Summon procedure remains manual."
+        }
+      ],
+      "effectInventory": {
+        "textSha256": "a2aa4a978ffeeb2035413612aaf726fdb9e385c0f67f8910c440dcf31981a2d6",
+        "scriptSha256": "40ea0234e3e0c96029170d12d17fc2a56348e77d924627f63863d5cfe474e03e",
+        "effects": [
+          {
+            "id": "hand-special-summon",
+            "label": "Special Summon from hand by discarding a Level 5 or higher DARK monster",
+            "status": "unsupported",
+            "reason": "No hand Special Summon procedure adapter is implemented. Intentionally left manual; requires implementation to automate."
+          },
+          {
+            "id": "discard-send",
+            "label": "Once per turn: discard a DARK monster; send a DARK monster from Deck to Graveyard",
+            "status": "implemented",
+            "kind": "field-ignition-discard-send-from-deck"
+          }
+        ]
+      }
+    },
     "40044918": {
       "name": "Elemental HERO Stratos",
       "status": "approved",
       "reviewedOn": "2026-10-17",
-      "sources": ["https://www.edisonformat.com/rulings/individual-rulings-d-e"],
+      "sources": [
+        "https://www.edisonformat.com/rulings/individual-rulings-d-e"
+      ],
       "effect": {
         "kind": "summon-trigger-search-or-destroy",
-        "monsterNamePrefixes": ["Elemental HERO ", "Destiny HERO ", "Evil HERO "],
-        "searchAbsentFaceUpCards": [{ "passcode": "71564252", "name": "Thunder King Rai-Oh" }]
+        "monsterNamePrefixes": [
+          "Elemental HERO ",
+          "Destiny HERO ",
+          "Evil HERO "
+        ],
+        "searchAbsentFaceUpCards": [
+          {
+            "passcode": "71564252",
+            "name": "Thunder King Rai-Oh"
+          }
+        ]
       },
       "manualResponsibilities": [
         "Confirm a legal optional Normal/Special Summon trigger window. This effect can miss timing and can activate during the Damage Step; the extension does not adjudicate chains, summon negation, effect negation or changed card names.",
@@ -18,10 +73,24 @@
         "Duelingbook permits controllers to move their own field cards. The extension displays selected destruction cards in its panel and moves yours; the opponent must move theirs. It sends no duel chat messages. Apply destruction protection, replacement effects and simultaneous destruction consequences manually. Cancel automation if native To GY movement is inappropriate.",
         "The search requires a legal matching monster in Deck; confirm this without opening the Deck before activating. Continuous search prohibitions are checked face-up; adjudicate negated continuous effects and other restrictions manually."
       ],
-      "comparisonSources": [{
-        "url": "https://edisonformat.net/card?name=Elemental%20HERO%20Stratos",
-        "note": "The April 2010 historical mapping uses Elemental, Destiny and Evil HERO names, not an unrestricted modern HERO family. Destruction choices occur at resolution and may be empty."
-      }]
+      "comparisonSources": [
+        {
+          "url": "https://edisonformat.net/card?name=Elemental%20HERO%20Stratos",
+          "note": "The April 2010 historical mapping uses Elemental, Destiny and Evil HERO names, not an unrestricted modern HERO family. Destruction choices occur at resolution and may be empty."
+        }
+      ],
+      "effectInventory": {
+        "textSha256": "1827be1730f8c8e904f94a579b08af82a06a7bb5ea46408b8f2c854e968bcda5",
+        "scriptSha256": "61125485eb3b4e70b85dc07c13c7317f76c255d65cc34d06174621986bc02335",
+        "effects": [
+          {
+            "id": "summon-choice",
+            "label": "On Normal or Special Summon: search a HERO monster or destroy Spells/Traps",
+            "status": "implemented",
+            "kind": "summon-trigger-search-or-destroy"
+          }
+        ]
+      }
     },
     "09411399": {
       "name": "Destiny HERO - Malicious",
@@ -66,7 +135,19 @@
           "dataUrl": "https://raw.githubusercontent.com/MikaMikaDE/mikaRulings/main/cards/9411399.json",
           "note": "The currently displayed Edison-specific ruling discusses ignition priority. It does not list the older Necrovalley and full-zone cases; absence alone is not evidence to remove historical behavior."
         }
-      ]
+      ],
+      "effectInventory": {
+        "textSha256": "394198de4768ee0fd0d9811e3ec8678ab41b26eda7c4bb8fce887f14cb3ab051",
+        "scriptSha256": "a6aeb128f1565a5f9a510c78effbc38388715a031c07bf532e215f7b43d77d2c",
+        "effects": [
+          {
+            "id": "graveyard-summon",
+            "label": "Banish this graveyard copy; Special Summon another copy from Deck",
+            "status": "implemented",
+            "kind": "graveyard-ignition-banish-summon-from-deck"
+          }
+        ]
+      }
     }
   }
 }

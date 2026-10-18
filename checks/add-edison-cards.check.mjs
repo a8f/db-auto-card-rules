@@ -6,7 +6,8 @@ import path from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
-import { addEdisonCards, promptForCandidate } from "../add-edison-cards.mjs";
+import { createHash } from "node:crypto";
+import { addEdisonCards, promptForCandidate, formatCardDiagnostics, formatCardResult } from "../add-edison-cards.mjs";
 
 async function fixture(t) {
   const root = await mkdtemp(path.join(tmpdir(), "edison-batch-"));
@@ -27,6 +28,7 @@ async function fixture(t) {
       const id = { "Example Existing": "09000001", "Example Good": "09000002", "Example Write Error": "09000003", "Example Later": "09000004", "Example Alias": "09000002" }[name];
       if (!id) return [{ status: "unsupported", reason: "No historical review" }];
       return [{ passcode: id, name, status: "supported", rule: { id: "new-" + id, card: { passcode: id, name }, label: "New" },
+        effectCoverage: { status: "complete", implemented: 1, total: 1, effects: [], warnings: [] },
         research: name === "Example Good" ? [{ error: "Example source unavailable; reviewed data still usable" }] : [] }];
     },
     mergeRules(list, [card]) {
@@ -63,7 +65,39 @@ test("per-card failures preserve successes, continue later cards and retain usef
   assert.equal(saved.rules[0].id, "original-id");
   assert.deepEqual(saved.formats, ["er", "eu"]);
   assert.equal(JSON.parse(await readFile(options.reportFile, "utf8")).failed, 4);
+  const diagnosticText = await readFile(report.diagnosticsFile, "utf8");
+  assert.ok(diagnosticText.includes("Import: failed - Example parser error"));
+  assert.ok(diagnosticText.includes("Card: Example Later [09000004]"));
   assert.equal((await addEdisonCards(["Example Existing"], options)).results[0].status, "unchanged");
+});
+
+test("pasteable diagnostics expose parser and review blockers together with implementation sources", () => {
+  const diagnostic = formatCardDiagnostics({ input: "example", status: "failed", reason: "No historical review",
+    extraction: { name: "Example Monster", passcode: "09000009", text: "Discard a monster; send a card from Deck.",
+      scriptPath: "example/script/c9000009.lua", lua: "function example()\nend\n", simulatorReason: "Unsupported discard cost",
+      ruleset: { writeAllowed: false, reason: "No historical review" },
+      research: [{ policy: "historical", url: "https://example.test/rulings", text: "Discarding is a cost." }] } });
+  assert.match(diagnostic, /Card: Example Monster \[09000009\]/);
+  assert.match(diagnostic, /Card text: Discard a monster/);
+  assert.match(diagnostic, /Lua script: loaded - example\/script/);
+  assert.match(diagnostic, /Lua translation: failed - Unsupported discard cost/);
+  assert.match(diagnostic, /Edison review: blocked - No historical review/);
+  assert.match(diagnostic, /Ruling source \(historical\): https:\/\/example.test\/rulings/);
+  assert.match(diagnostic, /Ruling text: Discarding is a cost/);
+  assert.match(diagnostic, /```lua\nfunction example\(\)\nend\n```/);
+});
+
+test("diagnostics distinguish translated Lua, historical reconstruction, and unavailable scripts", () => {
+  const format = extraction => formatCardDiagnostics({ input: "example", status: "added", extraction });
+  assert.match(format({ lua: "example", rule: {}, ruleset: { writeAllowed: true } }), /Lua translation: supported/);
+  const reconstructed = format({ rule: {}, simulatorReason: "Script missing", adaptation: { mode: "rulings-reconstruction" }, ruleset: { writeAllowed: true } });
+  assert.match(reconstructed, /Lua script: not loaded/);
+  assert.match(reconstructed, /Lua translation: failed - Script missing/);
+  assert.match(reconstructed, /Historical adaptation: rulings-reconstruction/);
+  assert.match(reconstructed, /Edison review: passed/);
+  assert.match(format({ rule: {}, adaptation: { mode: "rulings-reconstruction" } }), /Lua translation: not confirmed/);
+  assert.match(format({}), /Card text: not loaded/);
+  assert.match(format({}), /Edison review: not confirmed/);
 });
 
 test("dry-run checks merges individually without modifying the list", async t => {
@@ -72,6 +106,36 @@ test("dry-run checks merges individually without modifying the list", async t =>
   const report = await addEdisonCards(["Example Good", "Example Write Error", "Example Later"], { ...options, dryRun: true });
   assert.deepEqual(report.results.map(item => item.status), ["would-add", "failed", "would-add"]);
   assert.equal(await readFile(options.listFile, "utf8"), original);
+});
+
+test("partial coverage warns on every import including unchanged, duplicate and dry-run results", async t => {
+  const { options } = await fixture(t), extract = options.api.extractCards;
+  const coverage = { status: "partial", implemented: 1, total: 2, effects: [
+    { id: "summon", label: "Example summon procedure", status: "unsupported", reason: "Needs an adapter" },
+    { id: "ignition", label: "Example ignition effect", status: "implemented" }
+  ], warnings: ["Effect not implemented: Example summon procedure - Needs an adapter"] };
+  options.api.extractCards = async (...args) => (await extract(...args)).map(card => ({ ...card, effectCoverage: coverage }));
+  for (const dryRun of [true, false, false]) {
+    const before = await readFile(options.listFile, "utf8");
+    const report = await addEdisonCards(["Example Later", "Example Later"], { ...options, dryRun });
+    assert.equal(report.failed, 0); assert.equal(report.warningCount, 2);
+    assert.equal(report.results[1].status, "duplicate");
+    assert.ok(["would-add", "added", "unchanged"].includes(report.results[0].status));
+    assert.match(formatCardResult(report.results[0]), /Effect coverage: partial \(1\/2 implemented\)/);
+    assert.match(formatCardResult(report.results[0]), /UNSUPPORTED: Example summon procedure/);
+    assert.match(formatCardResult(report.results[1]), /WARNING: Effect not implemented/);
+    assert.match(await readFile(report.diagnosticsFile, "utf8"), /Effect coverage: partial/);
+    assert.equal(JSON.parse(await readFile(options.reportFile, "utf8")).results[0].effectCoverage.status, "partial");
+    if (dryRun) assert.equal(await readFile(options.listFile, "utf8"), before);
+  }
+});
+
+test("an older extractor without coverage data cannot silently claim full-card implementation", async t => {
+  const { options } = await fixture(t), extract = options.api.extractCards;
+  options.api.extractCards = async (...args) => (await extract(...args)).map(({ effectCoverage, ...card }) => card);
+  const report = await addEdisonCards(["Example Later"], options);
+  assert.equal(report.failed, 0); assert.equal(report.results[0].effectCoverage.status, "unverified");
+  assert.match(formatCardResult(report.results[0]), /WARNING: Full-card effect coverage is unverified/);
 });
 
 test("invalid review setup stops before extracting or writing cards", async t => {
@@ -126,7 +190,11 @@ test("real extractor integration reconstructs a supported card while skipping a 
   db.prepare("INSERT INTO texts VALUES (?, ?, ?)").run(9000001, "Example Existing", "Example text");
   db.close();
   const review = { status: "approved", name: "Example Existing", reviewedOn: "2026-10-17", sources: ["https://example.test/rulings"],
-    effect: { kind: "graveyard-ignition-banish-summon-from-deck", summon: { passcode: "09000001", name: "Example Existing" }, positions: ["ATK", "DEF"] } };
+    effect: { kind: "graveyard-ignition-banish-summon-from-deck", summon: { passcode: "09000001", name: "Example Existing" }, positions: ["ATK", "DEF"] },
+    effectInventory: { textSha256: createHash("sha256").update("Example text").digest("hex"), effects: [
+      { id: "exported", label: "Example ignition", status: "implemented", kind: "graveyard-ignition-banish-summon-from-deck" },
+      { id: "missing", label: "Example unsupported procedure", status: "unsupported", reason: "Needs implementation" }
+    ] } };
   await writeFile(options.reviewsFile, JSON.stringify({ schemaVersion: 1, ruleset: "edison", cards: { "09000001": review } }));
   const realList = { schemaVersion: 4, id: "test.edison", name: "Example Edison", version: "1.0.0", formats: ["er", "eu"], rules: [{
     id: "original-id", card: { passcode: "09000001", name: "Example Existing" }, label: "Old",
@@ -138,6 +206,11 @@ test("real extractor integration reconstructs a supported card while skipping a 
   const saved = JSON.parse(await readFile(options.listFile, "utf8"));
   assert.equal(saved.rules[0].id, "original-id");
   assert.deepEqual(saved.rules[0].action.activation.choices[0].options, ["ATK", "DEF"]);
+  assert.equal(report.results[1].effectCoverage.status, "partial");
+  assert.match(formatCardResult(report.results[1]), /WARNING: Effect not implemented: Example unsupported procedure/);
+  const rerun = await addEdisonCards(["Example Existing"], { ...paths, extractor, simulator: sim, extractionOptions: { research: false } });
+  assert.equal(rerun.results[0].status, "unchanged");
+  assert.match(formatCardResult(rerun.results[0]), /Effect coverage: partial \(1\/2 implemented\)/);
 });
 
 test("CLI help and malformed name files work without the extractor", async t => {
